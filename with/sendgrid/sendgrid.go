@@ -14,18 +14,18 @@ import (
 
 //Options includes the sendgrid key and the from address for the emails.
 type Options struct {
-	Key, From string
+	Key, From, MimeType string
 }
 
 //Sender contains the sendgrid Client and a mutable from address.
 type Sender struct {
 	*sendgrid.Client
-	From string
+	options Options
 }
 
 //New returns a new sendgrid Sender.
 func New(o Options) Sender {
-	return Sender{sendgrid.NewSendClient(o.Key), o.From}
+	return Sender{sendgrid.NewSendClient(o.Key), o}
 }
 
 //Error is an internal struct for detecting errors.
@@ -51,10 +51,10 @@ func (sender Sender) Send(m send.Message, to string) error {
 	p.AddTos(helper.NewEmail("", to))
 
 	email.AddPersonalizations(p)
-	email.SetFrom(helper.NewEmail("", sender.From))
+	email.SetFrom(helper.NewEmail("", sender.options.From))
 	email.Subject = m.Header()
 	email.AddContent(&helper.Content{
-		Type:  "text/plain",
+		Type:  sender.options.MimeType,
 		Value: m.String(),
 	})
 
